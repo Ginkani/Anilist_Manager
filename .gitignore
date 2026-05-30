@@ -1,0 +1,14 @@
+# Hidden Local Environment Secrets
+.env
+
+# Database persistence files
+*.db
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+
+# Python system cache copies
+__pycache__/
+*.pyc

@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniList Manager Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ==========================================================================
+           GLOBAL STYLING & VARIABLE CONFIGURATION
+           ==========================================================================
+        */
+        :root {
+            --bg-color: #0b1622;
+            --card-color: #151f2e;
+            --text-color: #bcbedc;
+            --text-bright: #edf1f5;
+            --accent-color: #3db4f2;
+            --border-color: #263447;
+            
+            /* Tier Status Colors */
+            --tier1-color: #28a745;
+            --tier2-color: #007bff;
+            --tier3-color: #ffc107;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ==========================================================================
+           HEADER & META METRICS LAYOUT
+           ==========================================================================
+        */
+        header {
+            background-color: var(--card-color);
+            padding: 20px 40px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--text-bright);
+            font-weight: 700;
+        }
+
+        header h1 span { color: var(--accent-color); }
+
+        /* Subtle developer-facing tracking metric tucked away next to greeting */
+        .dev-total-indicator {
+            font-size: 12px;
+            font-weight: 400;
+            color: #515f73;
+            margin-left: 12px;
+            vertical-align: middle;
+        }
+
+        .rule-tracker {
+            display: flex;
+            gap: 15px;
+        }
+
+        .rule-pill {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            background-color: #111a24;
+            border: 1px solid var(--border-color);
+        }
+        .rule-pill span { color: var(--text-bright); }
+        .rule-invalid { border-color: #eb4034; color: #eb4034; }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* ==========================================================================
+           FILTER CONTROLS & COUNTER UTILITIES BAR
+           ==========================================================================
+        */
+        .filter-bar {
+            background-color: var(--card-color);
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-bright);
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select {
+            background-color: #111a24;
+            color: var(--text-bright);
+            border: 1px solid var(--border-color);
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            min-width: 140px;
+        }
+
+        .search-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex-grow: 1; 
+            max-width: 320px; 
+            margin-left: 10px;
+        }
+
+        .search-input {
+            background-color: #111a24;
+            color: var(--text-bright);
+            border: 1px solid var(--border-color);
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+            outline: none;
+            font-family: inherit;
+        }
+        .search-input:focus { border-color: var(--accent-color); }
+
+        .sync-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sync-btn {
+            background-color: #111a24;
+            color: var(--text-bright);
+            border: 1px solid var(--border-color);
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .sync-btn:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            background-color: rgba(61, 180, 242, 0.05);
+        }
+
+        .counter-box {
+            margin-left: auto; 
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-bright);
+            white-space: nowrap;
+        }
+        .counter-box span { color: var(--accent-color); }
+
+        /* ==========================================================================
+           RELATIONAL MEDIA GRID & COMPONENT DATA LAYOUTS
+           ==========================================================================
+        */
+        .table-container {
+            background-color: var(--card-color);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #111a24;
+            color: var(--text-bright);
+            font-weight: 600;
+            padding: 16px 20px;
+            font-size: 13px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 16px 20px;
+            font-size: 15px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        tr.hidden-row { display: none !important; }
+        tr:hover td { background-color: #182535; }
+
+        tr.child-row td {
+            background-color: #0e1722;
+            border-left: 4px solid var(--accent-color);
+            font-size: 14px;
+        }
+        tr.child-row.collapsed-group { display: none !important; }
+
+        .media-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-group-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 0 4px;
+        }
+
+        .media-title {
+            color: var(--text-bright);
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .media-title:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        .link-action-btn, .unlink-action-btn {
+            background: none;
+            border: none;
+            color: #4c5b70;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+            margin-right: 4px;
+        }
+
+        .link-action-btn:hover {
+            color: var(--accent-color);
+            background-color: rgba(61, 180, 242, 0.1);
+        }
+
+        .unlink-action-btn:hover {
+            color: #c94c4c;
+            background-color: rgba(201, 76, 76, 0.1);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        /* Format Distinct Variant Colors */
+        .badge-TV { background-color: rgba(61, 180, 242, 0.15); color: #3db4f2; }
+        .badge-MOVIE { background-color: rgba(40, 167, 69, 0.15); color: #28a745; }
+        .badge-MANGA { background-color: rgba(227, 91, 131, 0.15); color: #e35b83; }
+        .badge-NOVEL { background-color: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .badge-ONE_SHOT { background-color: rgba(111, 66, 193, 0.15); color: #6f42c1; }
+        .badge-SPECIAL, .badge-OVA, .badge-ONA { background-color: rgba(23, 162, 184, 0.15); color: #17a2b8; }
+
+        /* Genres Pill Layout Framework styling */
+        .genre-pill-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-width: 260px;
+        }
+        .genre-mini-pill {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Distinct Color Maps computed based on name string length variants */
+        .genre-c0 { background-color: rgba(234, 132, 132, 0.15); color: #ea8484; }
+        .genre-c1 { background-color: rgba(118, 220, 190, 0.15); color: #76dcbe; }
+        .genre-c2 { background-color: rgba(141, 158, 241, 0.15); color: #8d9ef1; }
+        .genre-c3 { background-color: rgba(234, 161, 114, 0.15); color: #eaa172; }
+        .genre-c4 { background-color: rgba(224, 123, 219, 0.15); color: #e07bdb; }
+        .genre-c5 { background-color: rgba(162, 226, 117, 0.15); color: #a2e275; }
+        .genre-c6 { background-color: rgba(115, 203, 229, 0.15); color: #73cbe5; }
+
+        .tier-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 0.5px;
+            min-width: 55px;
+        }
+        .tier-Tier1 { background-color: var(--tier1-color); color: #ffffff; }
+        .tier-Tier2 { background-color: var(--tier2-color); color: #ffffff; }
+        .tier-Tier3 { background-color: var(--tier3-color); color: #111a24; }
+        .tier-None { display: none; }
+
+        .status-tag {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-align: center;
+            display: inline-block;
+        }
+        
+        /* Status Tracking Distinct Variant Colors */
+        .status-CURRENT, .status-WATCHING, .status-READING { background-color: rgba(61, 180, 242, 0.2); color: #3db4f2; }
+        .status-COMPLETED { background-color: rgba(104, 214, 114, 0.2); color: #68d672; }
+        .status-PLANNING { background-color: rgba(143, 90, 227, 0.2); color: #8f5ae3; }
+        .status-REPEATING, .status-REWATCHING, .status-REREADING { background-color: rgba(229, 193, 88, 0.2); color: #e5c158; }
+        .status-PAUSED { background-color: rgba(244, 67, 54, 0.15); color: #f44336; }
+        .status-DROPPED { background-color: rgba(122, 130, 158, 0.2); color: #7a829e; }
+
+        .rating-txt { font-weight: 600; color: #e5c158; }
+        .rating-unrated { display: none; }
+
+        .table-select {
+            background-color: #111a24;
+            color: var(--text-bright);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            width: 100px;
+            text-align: center;
+        }
+
+        /* ==========================================================================
+           MODAL CONTROL LAYOUT DESIGN
+           ==========================================================================
+        */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(5, 11, 18, 0.8);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: var(--card-color);
+            padding: 30px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            width: 500px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .modal-content h3 { margin: 0; color: var(--text-bright); }
+        
+        .modal-search-input {
+            background-color: #111a24;
+            color: var(--text-bright);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 4px;
+            outline: none;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .modal-search-input:focus { border-color: var(--accent-color); }
+
+        .checkbox-pool-container {
+            background-color: #111a24;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pool-item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(38, 52, 71, 0.5);
+            cursor: pointer;
+            user-select: none;
+        }
+        .pool-item-row:hover { background-color: rgba(61, 180, 242, 0.05); }
+        .pool-item-row input[type="checkbox"] {
+            transform: scale(1.15);
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+        .pool-item-label {
+            color: var(--text-bright);
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pool-item-meta {
+            font-size: 11px;
+            color: #7a829e;
+            margin-left: auto;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+        .modal-btn {
+            background-color: #111a24; color: var(--text-bright);
+            border: 1px solid var(--border-color); padding: 8px 16px;
+            border-radius: 4px; cursor: pointer; font-weight: 600;
+        }
+        .modal-btn.confirm { background-color: var(--accent-color); color: #111a24; border: none; }
+
+        /* ==========================================================================
+           DETAILS DISPLAY POPUP LAYOUT
+           ==========================================================================
+        */
+        .details-modal-box {
+            width: 640px !important;
+            gap: 20px !important;
+        }
+        .details-split-container {
+            display: flex;
+            gap: 20px;
+        }
+        .details-poster-wing {
+            width: 160px;
+            flex-shrink: 0;
+        }
+        .details-poster-wing img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .details-info-wing {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .details-header-row h2 {
+            margin: 0 0 4px 0;
+            color: var(--text-bright);
+            font-size: 20px;
+        }
+        .details-summary-body {
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: #9fadbd;
+            max-height: 180px;
+            overflow-y: auto;
+            background-color: #111a24;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .details-tag-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        /* ==========================================================================
+           IMAGE POPUP PREVIEW ACTIONS
+           ==========================================================================
+        */
+        .title-thumbnail {
+            width: 30px;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>
+            Welcome Back, <span>{{ username }}</span>!
+            <span class="dev-total-indicator">({{ anilist_total }} raw AniList payload entries)</span>
+        </h1>
+        <div class="rule-tracker">
+            <div id="t1-pill" class="rule-pill">Tier 1: <span id="t1-count">0</span> / 8</div>
+            <div id="t2-pill" class="rule-pill">Tier 2: Min <span id="t2-count">0</span> / 18</div>
+            <div id="t3-pill" class="rule-pill">Tier 3: Min <span id="t3-count">0</span> / 50</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label for="tierFilter">Tier</label>
+                <select id="tierFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="ALL">All Tiers</option>
+                    <option value="Tier 1">Tier 1</option>
+                    <option value="Tier 2">Tier 2</option>
+                    <option value="Tier 3">Tier 3</option>
+                    <option value="None">Untiered Items</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="typeFilter">Format</label>
+                <select id="typeFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="ALL">All Formats</option>
+                    <option value="TV">TV Shows</option>
+                    <option value="MOVIE">Movies</option>
+                    <option value="MANGA">Manga</option>
+                    <option value="NOVEL">Light Novels</option>
+                    <option value="ONE_SHOT">One-Shots</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="ALL">All Statuses</option>
+                    <option value="CURRENT">Watching / Reading</option>
+                    <option value="REPEATING">Rewatching / Rereading</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="PAUSED">Paused</option>
+                    <option value="DROPPED">Dropped</option>
+                    <option value="PLANNING">Plan to Watch</option>
+                </select>
+            </div>
+
+            <div class="search-group">
+                <label for="searchBar">Search List</label>
+                <input type="text" id="searchBar" class="search-input" placeholder="Type a title..." oninput="applyFilters()">
+            </div>
+
+            <div class="sync-group">
+                <label>&nbsp;</label>
+                <button id="syncBtn" class="sync-btn" onclick="triggerAniListSync()">Sync List</button>
+            </div>
+
+            <div class="counter-box">
+                Showing: <span id="visibleCount">{{ all_media|length }}</span> / {{ all_media|length }} master rows
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 11%;">Custom Tier</th>
+                        <th style="width: 32%;">Title</th>
+                        <th style="width: 17%;">Genres</th>
+                        <th style="width: 8%;">Format</th>
+                        <th style="width: 12%;">Status</th>
+                        <th style="width: 7%;">Rating</th>
+                        <th style="width: 5%;">Length</th>
+                        <th style="width: 8%; text-align: right;">Tier</th>
+                    </tr>
+                </thead>
+                <tbody id="masterTableBody">
+                    {% for item in all_media %}
+                    <tr id="row-{{ item.entry_id }}" class="parent-row" data-format="{{ item.display_type }}" data-status="{{ item.user_status }}" data-tier="{{ item.tier }}">
+                        <td>
+                            <span id="badge-txt-{{ item.entry_id }}" class="tier-tag tier-{{ item.tier.replace(' ', '') if item.tier else 'None' }}">
+                                {{ item.tier if item.tier and item.tier != 'None' else '' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="media-title-container" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    {% if item.children_entries %}
+                                    <button class="toggle-group-btn" data-parent-id="{{ item.entry_id }}" onclick="toggleGroupDisplay('{{ item.entry_id }}', this)">▼</button>
+                                    {% endif %}
+                                    
+                                    <div class="title-wrapper">
+                                        {% if item.cover_image %}
+                                        <img src="{{ item.cover_image }}" class="title-thumbnail" alt="cover">
+                                        {% endif %}
+                                        <span class="media-title" onclick="launchDetailsViewPopup({{ item | tojson | forceescape }})">
+                                            {{ item.title }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button class="link-action-btn" onclick="openLinkModal('{{ item.entry_id }}', '{{ item.title|e }}')" title="Link Entry">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="genre-pill-wrapper">
+                                {% for g in item.genres %}
+                                <span class="genre-mini-pill genre-c{{ g|length % 7 }}">{{ g }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td><span class="badge badge-{{ item.display_type }}">{{ item.display_type }}</span></td>
+                        <td><span class="status-tag status-{{ item.user_status }}">{{ item.user_status }}</span></td>
+                        <td><span class="rating-txt">{{ item.user_rating }}</span></td>
+                        <td>{{ item.length }}</td>
+                        <td style="text-align: right;">
+                            <select class="table-select" onchange="liveModifyTier('{{ item.entry_id }}', this, '{{ item.raw_notes|e }}', true)">
+                                <option value="None" {% if item.tier == 'None' or not item.tier %}selected{% endif %}>None</option>
+                                <option value="Tier 1" {% if item.tier == 'Tier 1' %}selected{% endif %}>Tier 1</option>
+                                <option value="Tier 2" {% if item.tier == 'Tier 2' %}selected{% endif %}>Tier 2</option>
+                                <option value="Tier 3" {% if item.tier == 'Tier 3' %}selected{% endif %}>Tier 3</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                        {% for child in item.children_entries %}
+                        <tr id="row-{{ child.entry_id }}" class="child-row group-parent-{{ item.entry_id }}" data-format="{{ child.display_type }}" data-status="{{ child.user_status }}" data-tier="{{ child.tier }}">
+                            <td></td>
+                            <td>
+                                <div class="media-title-container" style="padding-left: 20px; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                    <div class="title-wrapper">
+                                        {% if child.cover_image %}
+                                        <img src="{{ child.cover_image }}" class="title-thumbnail" style="width: 24px; height: 34px;" alt="cover">
+                                        {% endif %}
+                                        <span class="media-title" style="color: #8a90b5; font-size: 14px;" onclick="launchDetailsViewPopup({{ child | tojson | forceescape }})">
+                                            {{ child.title }}
+                                        </span>
+                                    </div>
+                                    <button class="unlink-action-btn" onclick="removeMappingLink('{{ child.entry_id }}')" title="Unlink Entry">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="genre-pill-wrapper" style="padding-left: 20px;">
+                                    {% for g in child.genres %}
+                                    <span class="genre-mini-pill genre-c{{ g|length % 7 }}" style="transform: scale(0.95);">{{ g }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td><span class="badge badge-{{ child.display_type }}" style="transform: scale(0.9);">{{ child.display_type }}</span></td>
+                            <td><span class="status-tag status-{{ child.user_status }}" style="transform: scale(0.9);">{{ child.user_status }}</span></td>
+                            <td><span class="rating-txt" style="font-size: 13px;">{{ child.user_rating }}</span></td>
+                            <td>{{ child.length }}</td>
+                            <td></td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="linkModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Link Entries</h3>
+            <p style="font-size: 13px; margin: 0; color: #7a829e;">Check all titles you want to tuck inside this container:</p>
+            
+            <input type="text" id="modalSearch" class="modal-search-input" placeholder="Type name to filter checklist..." oninput="filterModalPool()">
+            
+            <div id="modalCheckboxPool" class="checkbox-pool-container">
+                {% for option in full_raw_list %}
+                <div class="pool-item-row" data-title="{{ option.title|lower }}" data-id="{{ option.entry_id }}">
+                    <input type="checkbox" id="chk-{{ option.entry_id }}" value="{{ option.entry_id }}">
+                    <label for="chk-{{ option.entry_id }}" class="pool-item-label">{{ option.title }}</label>
+                    <span class="pool-item-meta">{{ option.display_type }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn" onclick="closeLinkModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="submitBatchMappingLinks()">Done Linking</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailsModal" class="modal" onclick="closeDetailsViewPopup(event)">
+        <div class="modal-content details-modal-box" onclick="event.stopPropagation()">
+            <div class="details-split-container">
+                <div class="details-poster-wing">
+                    <img id="popupImg" src="" alt="Poster">
+                </div>
+                <div class="details-info-wing">
+                    <div class="details-header-row">
+                        <h2 id="popupTitle">Media Title</h2>
+                        <div id="popupMetaBadges" style="margin-top: 6px; display: flex; gap: 8px; align-items: center;">
+                            </div>
+                    </div>
+                    
+                    <div class="details-tag-strip" id="popupGenres">
+                        </div>
+
+                    <div class="details-summary-body" id="popupDesc">
+                        No description text content found.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 5px;">
+                <button class="modal-btn" onclick="document.getElementById('detailsModal').style.display='none'">Close View</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentParentIdContext = null;
+
+        // Launches structural info metadata card overlay layout view components
+        function launchDetailsViewPopup(itemObj) {
+            document.getElementById('popupTitle').innerText = itemObj.title;
+            document.getElementById('popupImg').src = itemObj.cover_image || '';
+            
+            // Render stripped text summaries down while preserving styling parameters
+            document.getElementById('popupDesc').innerHTML = itemObj.description || 'No summary text updated.';
+            
+            // Build formatting info badge layout structures
+            const metaBox = document.getElementById('popupMetaBadges');
+            metaBox.innerHTML = `
+                <span class="badge badge-${itemObj.display_type}">${itemObj.display_type}</span>
+                <span class="status-tag status-${itemObj.user_status}">${itemObj.user_status}</span>
+                <span class="rating-txt" style="font-size: 14px;">★ ${itemObj.user_rating}</span>
+                <span style="font-size: 12px; font-weight: 600; color: #7a829e;">(${itemObj.length})</span>
+            `;
+
+            // Build structural category pill lists
+            const genreBox = document.getElementById('popupGenres');
+            genreBox.innerHTML = '';
+            if (itemObj.genres && itemObj.genres.length > 0) {
+                itemObj.genres.forEach(g => {
+                    const pill = document.createElement('span');
+                    const colorIndex = g.length % 7;
+                    pill.className = `genre-mini-pill genre-c${colorIndex}`;
+                    pill.style.padding = '4px 10px';
+                    pill.innerText = g;
+                    genreBox.appendChild(pill);
+                });
+            } else {
+                genreBox.innerHTML = '<span style="font-size: 12px; color: #515f73;">No explicit tags cataloged.</span>';
+            }
+
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        // Conceals modal framework contexts on exterior surface click paths
+        function closeDetailsViewPopup(event) {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        // Triggers the mapping setup view overlay component
+        function openLinkModal(parentId, title) {
+            currentParentIdContext = parentId;
+            document.getElementById('modalTitle').innerText = `Link under: ${title}`;
+            document.getElementById('modalSearch').value = "";
+            document.querySelectorAll('#modalCheckboxPool input[type="checkbox"]').forEach(chk => chk.checked = false);
+            filterModalPool();
+            document.getElementById('linkModal').style.display = "flex";
+            document.getElementById('modalSearch').focus();
+        }
+
+        // Conceals the checklist setup view component
+        function closeLinkModal() {
+            document.getElementById('linkModal').style.display = "none";
+        }
+
+        // Limits visible mapping selection checkboxes according to immediate entry input searches
+        function filterModalPool() {
+            const query = document.getElementById('modalSearch').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#modalCheckboxPool .pool-item-row');
+            
+            rows.forEach(row => {
+                const title = row.getAttribute('data-title');
+                const rowId = row.getAttribute('data-id');
+                if (rowId === currentParentIdContext) {
+                    row.style.display = "none";
+                    return;
+                }
+                if (query === "" || title.includes(query)) {
+                    row.style.display = "flex";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        // Submits structural grouping arrays to local SQLite tracking tables
+        function submitBatchMappingLinks() {
+            const checkedBoxes = document.querySelectorAll('#modalCheckboxPool input[type="checkbox"]:checked');
+            const targetIds = Array.from(checkedBoxes).map(chk => chk.value);
+            
+            if (targetIds.length === 0) {
+                alert("No items were selected. Please check at least one entry!");
+                return;
+            }
+
+            fetch('/link_entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_id: currentParentIdContext, child_ids: targetIds })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) window.location.reload();
+                else alert("Linking failed: " + data.error);
+            });
+        }
+
+        // Decoupled nested child rows back into regular dashboard rows via deletion calls
+        function removeMappingLink(childId) {
+            if(!confirm("Are you sure you want to decouple this entry back into its own standalone row?")) return;
+            
+            fetch('/unlink_entry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ child_id: childId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) window.location.reload();
+            });
+        }
+
+        // Manages visibility behaviors and saves persistent state states via localStorage maps
+        function toggleGroupDisplay(parentId, btnElement) {
+            const subRows = document.querySelectorAll(`.group-parent-${parentId}`);
+            const isCollapsed = btnElement.innerText === "▶";
+            
+            subRows.forEach(row => {
+                row.classList.toggle('collapsed-group', !isCollapsed);
+            });
+            
+            const finalState = isCollapsed ? "expanded" : "collapsed";
+            btnElement.innerText = isCollapsed ? "▼" : "▶";
+            
+            // Save state preference dynamically
+            localStorage.setItem(`group_toggle_${parentId}`, finalState);
+        }
+
+        // Restores previously saved user display preferences for parent groups on page load initialization
+        function restoreGroupToggles() {
+            const toggleButtons = document.querySelectorAll('.toggle-group-btn');
+            toggleButtons.forEach(btn => {
+                const parentId = btn.getAttribute('data-parent-id');
+                const savedPreference = localStorage.getItem(`group_toggle_${parentId}`);
+                
+                // Group is explicitly set to collapsed state via local records
+                if (savedPreference === "collapsed") {
+                    const subRows = document.querySelectorAll(`.group-parent-${parentId}`);
+                    subRows.forEach(row => {
+                        row.classList.add('collapsed-group');
+                    });
+                    btn.innerText = "▶";
+                }
+            });
+        }
+
+        // Calculates custom quota validation targets dynamically on runtime loading cycles
+        function enforceTierRestrictions() {
+            let t1 = 0, t2 = 0, t3 = 0;
+            const selects = document.querySelectorAll('.table-select');
+            
+            selects.forEach(select => {
+                if (select.value === "Tier 1") t1++;
+                if (select.value === "Tier 2") t2++;
+                if (select.value === "Tier 3") t3++;
+            });
+
+            document.getElementById('t1-count').innerText = t1;
+            document.getElementById('t2-count').innerText = t2;
+            document.getElementById('t3-count').innerText = t3;
+
+            document.getElementById('t1-pill').classList.toggle('rule-invalid', t1 !== 8);
+            document.getElementById('t2-pill').classList.toggle('rule-invalid', t2 < 18);
+            document.getElementById('t3-pill').classList.toggle('rule-invalid', t3 < 50);
+        }
+
+        // Operates advanced query search variables on the current workspace views
+        function applyFilters() {
+            const searchQuery = document.getElementById('searchBar').value.toLowerCase().trim();
+            const selectedTier = document.getElementById('tierFilter').value;
+            const selectedType = document.getElementById('typeFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
+            const parentRows = document.querySelectorAll('#masterTableBody tr.parent-row');
+            let visibleCount = 0;
+
+            parentRows.forEach(row => {
+                const parentId = row.id.replace('row-', '');
+                const titleElement = row.querySelector('.media-title');
+                const titleText = titleElement ? titleElement.innerText.toLowerCase().trim() : "";
+                
+                const rowFormat = row.getAttribute('data-format');
+                const rowStatus = row.getAttribute('data-status'); 
+                const rowTier = row.getAttribute('data-tier');
+                const subRows = document.querySelectorAll(`.group-parent-${parentId}`);
+                const toggleBtn = row.querySelector('.toggle-group-btn');
+
+                const searchMatch = searchQuery === "" || titleText.includes(searchQuery);
+                const tierMatch = (selectedTier === "ALL" || rowTier === selectedTier || (selectedTier === "None" && (!rowTier || rowTier === "None")));
+                
+                // Direct layout normalization mapping for filter categories
+                const typeMatch = (selectedType === "ALL" || rowFormat === selectedType);
+                const statusMatch = (selectedStatus === "ALL" || rowStatus === selectedStatus);
+
+                if (searchMatch && tierMatch && typeMatch && statusMatch) {
+                    row.classList.remove('hidden-row');
+                    visibleCount++;
+                    
+                    // Respect stored toggle parameters during active context searching layout tasks
+                    const isCurrentlyOpen = toggleBtn ? (toggleBtn.innerText === "▼") : true;
+                    subRows.forEach(sub => {
+                        sub.style.display = "";
+                        sub.classList.toggle('collapsed-group', !isCurrentlyOpen);
+                    });
+                } else {
+                    row.classList.add('hidden-row');
+                    subRows.forEach(sub => sub.style.display = "none");
+                }
+            });
+
+            document.getElementById('visibleCount').innerText = visibleCount;
+        }
+
+        // Posts live structural list updates straight back to the private watch notes stream on AniList
+        function liveModifyTier(entryId, selectElement, rawNotes, cascadeToChildren = true) {
+            const chosenValue = selectElement.value;
+            selectElement.disabled = true;
+
+            fetch('/update_tier', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry_id: entryId, tier: chosenValue, old_notes: rawNotes })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById(`row-${entryId}`);
+                    if(row) row.setAttribute('data-tier', chosenValue);
+                    
+                    const textBadge = document.getElementById(`badge-txt-${entryId}`);
+                    if(textBadge) {
+                        textBadge.className = `tier-tag tier-${chosenValue.replace(' ', '')}`;
+                        textBadge.innerText = chosenValue === "None" ? "" : chosenValue;
+                    }
+                    enforceTierRestrictions();
+                    applyFilters();
+                } else {
+                    alert("Failed to sync tier changes upstream to AniList.");
+                }
+            })
+            .catch(err => console.error("Network synchronization error:", err))
+            .finally(() => {
+                selectElement.disabled = false;
+            });
+        }
+
+        // Helper trigger to handle manual synchronization updates
+        function triggerAniListSync() {
+            const btn = document.getElementById('syncBtn');
+            btn.innerText = "Syncing...";
+            btn.disabled = true;
+            
+            fetch('/sync_anilist', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert("Error synchronizing: " + data.error);
+                }
+            })
+            .catch(err => alert("Network error synchronization path down."))
+            .finally(() => {
+                btn.innerText = "Sync List";
+                btn.disabled = false;
+            });
+        }
+
+        // Execute foundational logic checks instantly as soon as document rendering loops complete
+        window.addEventListener('DOMContentLoaded', () => {
+            restoreGroupToggles();
+            enforceTierRestrictions();
+        });
+    </script>
+</body>
+</html>
