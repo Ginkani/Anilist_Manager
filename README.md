@@ -12,5 +12,5 @@ pwd
 2)
 cd "/paste/the/path/you/copied/here"
 python3 app.py
-3) it will run on local host 5001.
+it will run on local host 5001.
 You can change this inside of app.py at the very bottom to suit your needs. 
